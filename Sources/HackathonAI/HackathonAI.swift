@@ -2,19 +2,19 @@ import CoreGraphics
 import Foundation
 import FoundationModels
 
-/// A client for the AI models running on the venue server.
+/// A client for the AI models running on the AI cluster.
 ///
 /// Create one with the address and your team's API key, then call it from
 /// anywhere in the app:
 ///
 /// ```swift
-/// let venueAI = HackathonAI(baseURL: "http://192.168.1.10:10000", apiKey: "team-01-xxxx")
+/// let aiCluster = HackathonAI(baseURL: "http://192.168.1.10:10000", apiKey: "team-01-xxxx")
 ///
-/// let answer = try await venueAI.respond(to: "Explain photosynthesis in one sentence")
-/// let card = try await venueAI.respond(to: notes, generating: StudyCard.self)
+/// let answer = try await aiCluster.respond(to: "Explain photosynthesis in one sentence")
+/// let card = try await aiCluster.respond(to: notes, generating: StudyCard.self)
 /// ```
 ///
-/// Works on iOS 26 and later. On iOS 27 you can also plug a venue model
+/// Works on iOS 26 and later. On iOS 27 you can also plug an AI cluster model
 /// straight into `LanguageModelSession` with `languageModel(_:)`.
 public struct HackathonAI: Sendable {
     public let baseURL: URL
@@ -107,7 +107,7 @@ public struct HackathonAI: Sendable {
     }
 
     /// Returns `true` if the server answers within a few seconds.
-    /// Use it to decide whether to show a venue-only feature.
+    /// Use it to decide whether to show a cluster-only feature.
     public func isReachable() async -> Bool {
         var request = transport.request("models")
         request.timeoutInterval = 3

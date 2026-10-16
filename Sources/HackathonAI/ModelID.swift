@@ -1,8 +1,8 @@
 import Foundation
 
-/// The name of a model on the venue server.
+/// The name of a model on the AI cluster.
 ///
-/// The constants below are the only place model names live. If the venue
+/// The constants below are the only place model names live. If the cluster
 /// changes which model sits behind a name, nothing here needs to change.
 /// You can also pass any string: `model: "some-new-model"`.
 public struct ModelID: RawRepresentable, Hashable, Sendable, ExpressibleByStringLiteral, CustomStringConvertible {
@@ -15,7 +15,7 @@ public struct ModelID: RawRepresentable, Hashable, Sendable, ExpressibleByString
     public var description: String { rawValue }
 }
 
-// TBC: replace with the real model IDs once the venue AI server is set up.
+// TBC: replace with the real model IDs once the AI cluster is set up.
 public extension ModelID {
     /// Smart Route (Gemma 4 26B / Qwen3.6 35B). Default for chat, summaries, Thai and structured output.
     static let chat: ModelID = "sccth-gq"

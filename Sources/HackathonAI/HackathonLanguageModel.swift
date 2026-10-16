@@ -6,11 +6,11 @@ import FoundationModels
 
 @available(iOS 27.0, macOS 27.0, *)
 extension HackathonAI {
-    /// A venue model you can pass to `LanguageModelSession`, so `respond`,
+    /// An AI cluster model you can pass to `LanguageModelSession`, so `respond`,
     /// streaming, `@Generable` and tools all work exactly as they do on device.
     ///
     /// ```swift
-    /// let session = LanguageModelSession(model: venueAI.languageModel(.chat))
+    /// let session = LanguageModelSession(model: aiCluster.languageModel(.chat))
     /// ```
     public func languageModel(
         _ model: ModelID = .chat,

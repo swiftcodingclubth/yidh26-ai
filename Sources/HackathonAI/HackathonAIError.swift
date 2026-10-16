@@ -1,9 +1,9 @@
 import Foundation
 
-/// Everything that can go wrong when calling the venue server.
+/// Everything that can go wrong when calling the AI cluster.
 /// Catch any of these and fall back to the on-device model.
 public enum HackathonAIError: LocalizedError, Sendable {
-    /// Not on the venue Wi-Fi, wrong address, or the server is down.
+    /// Not on the event Wi-Fi, wrong address, or the server is down.
     case unreachable(String)
     /// iOS blocked the plain `http://` connection. Add `NSAllowsArbitraryLoads` to Info.plist.
     case blockedByAppTransportSecurity
@@ -21,7 +21,7 @@ public enum HackathonAIError: LocalizedError, Sendable {
     public var errorDescription: String? {
         switch self {
         case .unreachable(let reason):
-            "Can't reach the venue AI server. Are you on the venue Wi-Fi? (\(reason))"
+            "Can't reach the AI cluster. Are you on the event Wi-Fi? (\(reason))"
         case .blockedByAppTransportSecurity:
             "iOS blocked the http:// connection. In Info.plist, add NSAppTransportSecurity > NSAllowsArbitraryLoads = YES."
         case .unauthorized:

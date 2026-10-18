@@ -75,7 +75,12 @@ public struct HackathonLanguageModelExecutor: LanguageModelExecutor {
     ) async throws {
         let transport = Transport(baseURL: configuration.baseURL, apiKey: configuration.apiKey)
         let modelID = ModelID(configuration.modelID)
-        let body = try makeBody(for: request)
+        let body: [String: Any]
+        do {
+            body = try makeBody(for: request)
+        } catch {
+            throw Log.error(error, "Building the request for \(modelID.rawValue)")
+        }
 
         var splitter = ThinkSplitter()
         var jsonFilter = request.schema == nil ? nil : JSONObjectFilter()

@@ -42,14 +42,22 @@ struct Transport: Sendable {
 
     /// Sends a request and returns the body of a 2xx response.
     func data(for request: URLRequest, model: ModelID? = nil) async throws -> Data {
+        let context = Self.context(request, model: model)
+        Log.request(request, model: model)
+        let start = ContinuousClock.now
         let data: Data
         let response: URLResponse
         do {
             (data, response) = try await Self.session.data(for: request)
         } catch {
-            throw Self.connectionError(error)
+            throw Log.error(Self.connectionError(error), context)
         }
-        try Self.check(response, body: data, model: model)
+        if let http = response as? HTTPURLResponse { Log.response(request, status: http.statusCode, since: start) }
+        do {
+            try Self.check(response, body: data, model: model)
+        } catch {
+            throw Log.error(error, context)
+        }
         return data
     }
 
@@ -59,12 +67,16 @@ struct Transport: Sendable {
         do {
             request = self.request("chat/completions", method: "POST", body: try JSONSerialization.data(withJSONObject: body))
         } catch {
+            Log.error(error, "Encoding chat request for \(model.rawValue)")
             return AsyncThrowingStream { $0.finish(throwing: error) }
         }
+        let context = Self.context(request, model: model)
 
         return AsyncThrowingStream { continuation in
             let task = Task {
                 do {
+                    Log.request(request, model: model)
+                    let start = ContinuousClock.now
                     let bytes: URLSession.AsyncBytes
                     let response: URLResponse
                     do {
@@ -72,6 +84,7 @@ struct Transport: Sendable {
                     } catch {
                         throw Self.connectionError(error)
                     }
+                    if let http = response as? HTTPURLResponse { Log.response(request, status: http.statusCode, since: start) }
                     if let http = response as? HTTPURLResponse, !(200..<300).contains(http.statusCode) {
                         var errorBody = Data()
                         for try await byte in bytes { errorBody.append(byte) }
@@ -85,18 +98,37 @@ struct Transport: Sendable {
                         guard
                             let data = payload.data(using: .utf8),
                             let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
-                        else { continue }
+                        else {
+                            Log.notice("Skipped a stream line that isn't JSON: \(payload.prefix(200))")
+                            continue
+                        }
+                        if let message = Self.streamErrorMessage(in: json) {
+                            throw HackathonAIError.server(statusCode: 200, message: message)
+                        }
                         if let delta = Self.delta(from: json) {
                             continuation.yield(delta)
                         }
                     }
+                    Log.finished(request, since: start)
                     continuation.finish()
                 } catch {
-                    continuation.finish(throwing: error)
+                    continuation.finish(throwing: Log.error(error, context))
                 }
             }
             continuation.onTermination = { _ in task.cancel() }
         }
+    }
+
+    private static func context(_ request: URLRequest, model: ModelID?) -> String {
+        let path = request.url?.absoluteString ?? "?"
+        let model = model.map { " (model \($0.rawValue))" } ?? ""
+        return "\(request.httpMethod ?? "GET") \(path)\(model)"
+    }
+
+    /// Some servers report a failure mid-stream as `{"error": …}` inside an SSE event.
+    private static func streamErrorMessage(in json: [String: Any]) -> String? {
+        if let error = json["error"] as? [String: Any] { return error["message"] as? String ?? "\(error)" }
+        return json["error"] as? String
     }
 
     private static func connectionError(_ error: Error) -> HackathonAIError {

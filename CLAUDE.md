@@ -16,7 +16,7 @@ Used by:
 ## Design rules
 
 - **Must build with Xcode 26 and 27.** `swift-tools-version: 6.2`, iOS 26 minimum. Anything that needs the iOS 27 SDK (the `LanguageModel` adapter) is wrapped in `#if compiler(>=6.4)` plus `@available(iOS 27.0, *)`.
-- **Simple for students**: one line to set up (`HackathonAI(baseURL:apiKey:)`), and errors in plain English.
+- **Simple for students**: one line to set up (`HackathonAI(apiKey:)` for the YiDH cluster, `HackathonAI(baseURL:apiKey:)` for any other server), and errors in plain English.
 - **Model names are only in `ModelID.swift`.** Any string also works as a `ModelID`. Changing which model runs behind a name should need no code change.
 - Public API mirrors Foundation Models: `respond`, `streamResponse` (yields the whole answer so far), `respond(generating:)` with `@Generable` types.
 
@@ -28,8 +28,9 @@ Used by:
 | `HackathonLanguageModel.swift` | iOS 27 `LanguageModel` + `LanguageModelExecutor`: turns the transcript into OpenAI messages, sends tools and the schema, streams text, reasoning and tool-call deltas back to the channel. |
 | `Transport.swift` | HTTP + SSE parsing, error mapping (401/403, 429 with Retry-After, 404 model, ATS), `ThinkSplitter` (removes `<think>` even when a tag is split across chunks), `JSONObjectFilter` (keeps only the first JSON object while streaming). |
 | `HackathonAIError.swift` | All errors students might catch. |
+| `Log.swift` | `os.Logger` (subsystem `HackathonAI`): every request and response status at debug level, every error at error level with where it happened. Never logs the API key or prompts. |
 | `ImageEncoder.swift` | CGImage → JPEG, longest side scaled down to 1600. |
-| `ModelID.swift` | Model name constants. **Still placeholders (`sccth-gq`, …).** |
+| `ModelID.swift` | Model name constants: `.chat` is the `@route/sccth-gq` route, the rest are pinned to models on the SCCTH5 node. |
 
 ## Server behaviour (seen on a real Qwen3.8 27B deployment)
 
@@ -51,7 +52,7 @@ Releasing: commit to `main`, `git tag X.Y.Z && git push origin X.Y.Z`, `gh relea
 
 ## To do
 
-- [ ] Real model IDs in `ModelID.swift` once the AI cluster is set up, then tag a new version.
+- [ ] Tag a new version now that `ModelID.swift` has the real model IDs.
 - [ ] Rate limit numbers for the handbook once known.
 - [ ] Decide on a LICENSE (none yet).
 - [ ] Maybe: streaming `@Generable` partials for the simple API (only the iOS 27 session path streams partials today).

@@ -18,7 +18,7 @@ Always pin an **exact version**, so every app at the event uses the same code an
     https://github.com/swiftcodingclubth/yidh26-ai
     ```
 
-3. Set **Dependency Rule** to **Exact Version** and enter `0.0.2`.
+3. Set **Dependency Rule** to **Exact Version** and enter `0.0.3`.
 4. Click **Add Package**, then tick **HackathonAI** for your app target.
 
 To update later: select the project ▸ **Package Dependencies** tab ▸ double-click `yidh26-ai` ▸ change the exact version.
@@ -27,7 +27,7 @@ To update later: select the project ▸ **Package Dependencies** tab ▸ double-
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/swiftcodingclubth/yidh26-ai", exact: "0.0.2"),
+    .package(url: "https://github.com/swiftcodingclubth/yidh26-ai", exact: "0.0.3"),
 ],
 targets: [
     .target(name: "MyApp", dependencies: [
@@ -42,23 +42,33 @@ targets: [
 2. Tag it and push the tag. SPM only sees tagged versions.
 
     ```sh
-    git tag 0.0.3
-    git push origin 0.0.3
+    git tag 0.0.4
+    git push origin 0.0.4
     ```
 
 3. Update the exact version in each app (and in the handbook) when you want them to move.
 
 ## Setup
 
-1. Create one client with the server address and your team's API key:
+1. Create one client with your team's API key:
 
     ```swift
     import HackathonAI
 
-    let aiCluster = HackathonAI(baseURL: "http://192.168.1.10:10000", apiKey: "team-01-xxxx")
+    let aiCluster = HackathonAI(apiKey: "team-01-xxxx")
     ```
 
-    `/v1` is added for you.
+    This connects to the YiDH AI cluster at `http://10.1.17.156:3949`, and the [model presets](#models) are its models.
+
+    To use another server, pass its address. The presets aren't on that server, so list its models and pass one as `model:`:
+
+    ```swift
+    let lab = HackathonAI(baseURL: "http://10.2.0.5:8000", apiKey: "lab-key")
+    let models = try await lab.models()             // the IDs this server has
+    let answer = try await lab.respond(to: "Hello", model: models[0].id)
+    ```
+
+    `http://` and `/v1` are added for you.
 
 2. Add these to your app's Info.plist. The server uses plain `http://` on a local IP address, which iOS blocks by default.
 
@@ -121,7 +131,7 @@ The session keeps the conversation, and supports `@Generable`, tool calling and 
 
 ## Models
 
-Model names are constants on `ModelID`. You can also pass any ID string the server lists, e.g. `model: "some-model-id"`.
+Model names are constants on `ModelID`. They are the model IDs on the YiDH AI cluster, and every method uses `.chat` unless you pass `model:`. You can also pass any ID string the server lists, e.g. `model: "some-model-id"`. On another server, always pass `model:`.
 
 | Constant | Use for |
 |---|---|

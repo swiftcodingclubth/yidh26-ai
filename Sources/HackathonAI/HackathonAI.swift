@@ -8,7 +8,7 @@ import FoundationModels
 /// anywhere in the app:
 ///
 /// ```swift
-/// let aiCluster = HackathonAI(baseURL: "http://192.168.1.10:10000", apiKey: "team-01-xxxx")
+/// let aiCluster = HackathonAI(apiKey: "team-01-xxxx")
 ///
 /// let answer = try await aiCluster.respond(to: "Explain photosynthesis in one sentence")
 /// let card = try await aiCluster.respond(to: notes, generating: StudyCard.self)
@@ -17,12 +17,32 @@ import FoundationModels
 /// Works on iOS 26 and later. On iOS 27 you can also plug an AI cluster model
 /// straight into `LanguageModelSession` with `languageModel(_:)`.
 public struct HackathonAI: Sendable {
+    /// The YiDH AI cluster on the event Wi-Fi.
+    public static let defaultBaseURL = "http://10.1.17.156:3949"
+
     public let baseURL: URL
     let transport: Transport
 
+    /// Connects to the YiDH AI cluster. The `ModelID` presets (`.chat`, `.ocr`, …) are its models.
+    /// - Parameter apiKey: Your team's API key.
+    public init(apiKey: String) {
+        self.init(baseURL: Self.defaultBaseURL, apiKey: apiKey)
+    }
+
+    /// Connects to another OpenAI-compatible server.
+    ///
+    /// The `ModelID` presets are the YiDH AI cluster's models, so they won't exist here.
+    /// Call `models()` to see this server's model IDs, then pass one as `model:`:
+    ///
+    /// ```swift
+    /// let lab = HackathonAI(baseURL: "http://10.2.0.5:8000", apiKey: "lab-key")
+    /// let model = try await lab.models().first!.id
+    /// let answer = try await lab.respond(to: "Hello", model: model)
+    /// ```
+    ///
     /// - Parameters:
-    ///   - baseURL: The server address, e.g. `"http://192.168.1.10:10000"`. `/v1` is added if missing.
-    ///   - apiKey: Your team's API key.
+    ///   - baseURL: The server address, e.g. `"http://10.2.0.5:8000"`. `http://` and `/v1` are added if missing.
+    ///   - apiKey: The API key for that server.
     public init(baseURL: String, apiKey: String) {
         var address = baseURL.trimmingCharacters(in: .whitespacesAndNewlines)
         if !address.contains("://") { address = "http://" + address }
@@ -93,7 +113,7 @@ public struct HackathonAI: Sendable {
             let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
             let list = json["data"] as? [[String: Any]]
         else {
-            throw HackathonAIError.invalidResponse("expected a model list")
+            throw Log.error(HackathonAIError.invalidResponse("expected a model list"), "GET models")
         }
         return list.compactMap { entry in
             guard let id = entry["id"] as? String else { return nil }
@@ -229,6 +249,7 @@ public struct HackathonAI: Sendable {
             text = try await collect(body, model: model)
         } catch HackathonAIError.server(let status, _) where status == 400 || status == 422 {
             // This model doesn't support `response_format`. The schema in the prompt is enough.
+            Log.notice("\(model.rawValue) rejected response_format (\(status)); retrying with the schema in the prompt only")
             body["response_format"] = nil
             text = try await collect(body, model: model)
         }
@@ -237,6 +258,7 @@ public struct HackathonAI: Sendable {
         do {
             return try Content(GeneratedContent(json: json))
         } catch {
+            Log.error(error, "Decoding \(Content.self) from \(model.rawValue); full answer: \(text)")
             throw HackathonAIError.invalidResponse("the answer didn't match \(Content.self): \(text.prefix(200))")
         }
     }
@@ -273,7 +295,7 @@ public struct HackathonAI: Sendable {
         let request = transport.request("audio/transcriptions", method: "POST", body: form.finished, contentType: form.contentType)
         let data = try await transport.data(for: request, model: model)
         guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any], let text = json["text"] as? String else {
-            throw HackathonAIError.invalidResponse("expected a transcript")
+            throw Log.error(HackathonAIError.invalidResponse("expected a transcript"), "POST audio/transcriptions (model \(model.rawValue))")
         }
         return text
     }

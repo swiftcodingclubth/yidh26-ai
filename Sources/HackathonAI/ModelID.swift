@@ -15,18 +15,17 @@ public struct ModelID: RawRepresentable, Hashable, Sendable, ExpressibleByString
     public var description: String { rawValue }
 }
 
-// TBC: replace with the real model IDs once the AI cluster is set up.
 public extension ModelID {
-    /// Smart Route (Gemma 4 26B / Qwen3.6 35B). Default for chat, summaries, Thai and structured output.
-    static let chat: ModelID = "sccth-gq"
-    /// Qwen3.8 27B. Reasoning, document analysis, image input and tool calling.
-    static let reasoning: ModelID = "sccth-reasoning"
+    /// Smart Route (`@route/sccth-gq`, falls back to the Gemma 4 pool). Default for chat, summaries, Thai and structured output.
+    static let chat: ModelID = "@route/sccth-gq"
+    /// Qwen3.6 35B. Reasoning, document analysis, image input and tool calling.
+    static let reasoning: ModelID = "nexus-node-15de3eac23192e67332ee785/mlx/Jundot/Qwen3.6-35B-A3B-oQ4e-mtp"
     /// MedGemma 1.5 4B. Medical knowledge. Synthetic data only.
-    static let medical: ModelID = "sccth-medical"
+    static let medical: ModelID = "nexus-node-15de3eac23192e67332ee785/mlx/mlx-community/medgemma-1.5-4b-it-bf16"
     /// Typhoon OCR 1.5 2B. Reads Thai and English text from images.
-    static let ocr: ModelID = "sccth-ocr"
+    static let ocr: ModelID = "nexus-node-15de3eac23192e67332ee785/mlx/mlx-community/typhoon-ocr1.5-2b-8bit"
     /// Qwen3-TTS 1.7B. Text to speech.
-    static let tts: ModelID = "sccth-tts"
+    static let tts: ModelID = "nexus-node-15de3eac23192e67332ee785/mlx/mlx-community/Qwen3-TTS-12Hz-1.7B-CustomVoice-bf16"
     /// Qwen3-ASR 1.7B. Speech to text (Thai/English).
-    static let asr: ModelID = "sccth-asr"
+    static let asr: ModelID = "nexus-node-15de3eac23192e67332ee785/mlx/mlx-community/Qwen3-ASR-1.7B-bf16"
 }
